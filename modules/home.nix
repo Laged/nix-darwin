@@ -70,6 +70,11 @@ in {
         # Enable userChrome.css
         "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
 
+        # Homepage & new tab = DuckDuckGo start page
+        "browser.startup.homepage" = "https://start.duckduckgo.com";
+        "browser.newtabpage.enabled" = false;  # Use homepage for new tabs
+        "browser.startup.page" = 1;  # Open homepage on startup
+
         # Privacy settings
         "privacy.trackingprotection.enabled" = true;
         "privacy.trackingprotection.socialtracking.enabled" = true;
@@ -79,15 +84,6 @@ in {
         "browser.uidensity" = 1;  # Compact mode
         "browser.tabs.firefox-view" = false;
         "browser.toolbars.bookmarks.visibility" = "never";  # Never show bookmarks bar
-
-        # Clean new tab page
-        "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
-        "browser.newtabpage.activity-stream.feeds.topsites" = false;
-        "browser.newtabpage.activity-stream.showSponsored" = false;
-        "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
-        "browser.newtabpage.activity-stream.feeds.snippets" = false;
-        "browser.newtabpage.activity-stream.feeds.section.highlights" = false;
-        "browser.newtabpage.activity-stream.showSearch" = false;  # Hide search on new tab
 
         # Performance
         "gfx.webrender.all" = true;
@@ -99,130 +95,45 @@ in {
         "extensions.pocket.enabled" = false;
         "browser.tabs.tabmanager.enabled" = false;  # Hide tab dropdown
         "browser.download.autohideButton" = true;  # Auto-hide download button
+
+        # Prevent troubleshoot/safe mode dialog
+        "browser.sessionstore.resume_from_crash" = false;
+        "browser.sessionstore.max_resumed_crashes" = 0;
+        "toolkit.startup.max_resumed_crashes" = -1;
       };
 
-      # userChrome.css - Ultra minimal Firefox UI
+      # userChrome.css - Chromeless Firefox (no tabs, no navbar, no UI)
       userChrome = ''
-        /* Minimal Firefox - Stylix themed, square corners */
-
-        :root {
-          --uc-navbar-height: 40px;
-          --lwt-accent-color: ${colors.base00} !important;
-          --lwt-text-color: ${colors.base05} !important;
-          --toolbar-bgcolor: ${colors.base00} !important;
-          --toolbar-color: ${colors.base05} !important;
-        }
-
-        /* Remove ALL border radius */
-        *, *::before, *::after {
-          border-radius: 0 !important;
-        }
-
-        /* ===== HIDE NAVBAR BY DEFAULT ===== */
-        #nav-bar {
+        /* Hide entire toolbar area */
+        #navigator-toolbox {
+          visibility: collapse !important;
+          height: 0 !important;
           min-height: 0 !important;
           max-height: 0 !important;
-          height: 0 !important;
-          padding: 0 !important;
-          margin: 0 !important;
           overflow: hidden !important;
-          opacity: 0;
-          transition: all 0.15s ease !important;
         }
 
-        /* Show navbar on hover or when URL bar is focused */
-        #navigator-toolbox:hover #nav-bar,
-        #navigator-toolbox:focus-within #nav-bar {
-          min-height: var(--uc-navbar-height) !important;
-          max-height: var(--uc-navbar-height) !important;
-          height: var(--uc-navbar-height) !important;
-          opacity: 1;
+        /* Fallback: hide individual toolbars */
+        #TabsToolbar,
+        #nav-bar,
+        #PersonalToolbar,
+        #toolbar-menubar,
+        .browser-toolbar {
+          visibility: collapse !important;
+          height: 0 !important;
+          min-height: 0 !important;
         }
 
-        /* ===== HIDE EXTRA ELEMENTS ===== */
-        #PersonalToolbar,           /* Bookmarks bar */
-        #titlebar-spacer,           /* Titlebar spacers */
-        .titlebar-buttonbox-container, /* Window buttons (we use WM) */
-        #alltabs-button,            /* All tabs dropdown */
-        #firefox-view-button,       /* Firefox view */
-        #tracking-protection-icon-container, /* Shield icon */
-        #identity-icon-box,         /* Site identity */
-        #page-action-buttons,       /* Page actions */
-        .tab-close-button,          /* Tab close buttons */
-        #star-button-box,           /* Bookmark star */
-        #urlbar-zoom-button,        /* Zoom indicator */
-        #reader-mode-button,        /* Reader mode */
-        #picture-in-picture-button, /* PiP button */
-        .tab-secondary-label        /* Tab subtitle */
-        {
+        /* Hide titlebar elements */
+        #titlebar,
+        .titlebar-buttonbox-container,
+        .titlebar-spacer {
           display: none !important;
         }
 
-        /* ===== TABS BAR ===== */
-        #TabsToolbar {
-          background: ${colors.base00} !important;
-          border: none !important;
-        }
-
-        #tabbrowser-tabs {
-          background: ${colors.base00} !important;
-        }
-
-        .tabbrowser-tab {
-          margin: 0 !important;
-          padding: 0 4px !important;
-          min-height: 32px !important;
-        }
-
-        .tab-background {
-          margin: 0 !important;
-          background: transparent !important;
-          border: none !important;
-        }
-
-        .tabbrowser-tab[selected="true"] .tab-background {
-          background: ${colors.base01} !important;
-        }
-
-        .tab-line { display: none !important; }
-
-        /* ===== NAVIGATOR TOOLBOX ===== */
-        #navigator-toolbox {
-          background: ${colors.base00} !important;
-          border-bottom: none !important;
-        }
-
-        /* ===== URL BAR (when visible) ===== */
-        #nav-bar {
-          background: ${colors.base00} !important;
-          border: none !important;
-        }
-
-        #urlbar-background {
-          background: ${colors.base01} !important;
-          border: 1px solid ${colors.base02} !important;
-        }
-
-        #urlbar[focused="true"] > #urlbar-background {
-          border-color: ${colors.base0D} !important;
-        }
-
-        /* ===== MISC ===== */
-        #sidebar-box {
-          background: ${colors.base00} !important;
-        }
-
-        findbar {
-          background: ${colors.base00} !important;
-        }
-
-        /* Autocomplete dropdown */
-        .urlbarView {
-          background: ${colors.base00} !important;
-        }
-
-        .urlbarView-row[selected] {
-          background: ${colors.base01} !important;
+        /* Remove any top margin/padding from content */
+        #browser {
+          margin-top: 0 !important;
         }
       '';
 
@@ -244,6 +155,32 @@ in {
       '';
     };
   };
+
+  # Copy Firefox chrome files (dereference symlinks - Firefox may not follow them)
+  home.activation.firefoxChrome = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    FIREFOX_DIR="$HOME/Library/Application Support/Firefox/Profiles"
+    DEFAULT_CHROME="$FIREFOX_DIR/default/chrome"
+
+    # Dereference symlinks in the default profile's chrome folder
+    if [ -d "$DEFAULT_CHROME" ]; then
+      for f in "$DEFAULT_CHROME"/*; do
+        if [ -L "$f" ]; then
+          # Replace symlink with actual file content
+          REAL_FILE=$(readlink "$f")
+          rm "$f"
+          cp "$REAL_FILE" "$f"
+        fi
+      done
+    fi
+
+    # Copy to all other profiles
+    for profile in "$FIREFOX_DIR"/*; do
+      if [ -d "$profile" ] && [ "$profile" != "$FIREFOX_DIR/default" ]; then
+        mkdir -p "$profile/chrome"
+        cp -f "$DEFAULT_CHROME"/* "$profile/chrome/" 2>/dev/null || true
+      fi
+    done
+  '';
 
   # ============================================
   # Git Configuration
@@ -280,7 +217,7 @@ in {
 
     shellAliases = {
       # Nix
-      rebuild = "sudo darwin-rebuild switch --flake ~/.config/nix-darwin#Mattis-MacBook-Pro";
+      rebuild = "sudo darwin-rebuild switch --flake ~/Codings/laged/nix-darwin#Mattis-MacBook-Pro";
       update = "nix flake update ~/.config/nix-darwin && rebuild";
 
       # Modern replacements
@@ -323,7 +260,7 @@ in {
   programs.starship = {
     enable = true;
     settings = {
-      add_newline = true;
+      add_newline = false;
       format = lib.concatStrings [
         "$directory"
         "$git_branch"

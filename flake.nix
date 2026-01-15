@@ -91,6 +91,12 @@
         # Enable sudo authentication with Touch ID.
         security.pam.services.sudo_local.touchIdAuth = true;
 
+        # Allow passwordless sudo for darwin-rebuild and nix commands
+        environment.etc."sudoers.d/nix-darwin".text = ''
+          ${username} ALL=(ALL) NOPASSWD: /run/current-system/sw/bin/darwin-rebuild *
+          ${username} ALL=(ALL) NOPASSWD: /nix/var/nix/profiles/default/bin/nix *
+        '';
+
         # Configure direnv integration
         programs.direnv = {
           enable = true;

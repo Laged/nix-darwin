@@ -53,11 +53,10 @@ let
     cmd-h = []
 
     # --- Launch Applications ---
-    # cmd-alt-space: Alacritty (Nix .app), cmd-alt-enter: Ghostty (Homebrew)
+    # cmd-alt-space: Alacritty, cmd-alt-enter: Ghostty, cmd-alt-b: Firefox
     cmd-alt-space = 'exec-and-forget open -n ~/.local/state/home-manager/gcroots/current-home/home-path/Applications/Alacritty.app'
     cmd-alt-enter = 'exec-and-forget open -n /Applications/Ghostty.app'
-    cmd-alt-b = 'exec-and-forget open -a "Arc"'
-    cmd-alt-shift-b = 'exec-and-forget open -n -a "Arc"'
+    cmd-alt-b = 'exec-and-forget open -n -a "Firefox"'
 
     # --- Screenshot (interactive selection to clipboard) ---
     cmd-alt-shift-s = 'exec-and-forget screencapture -ic'
@@ -196,6 +195,12 @@ in {
       sudo -u "$PRIMARY_USER" ln -sf "${aerospace-config}" "$CONFIG_DIR/aerospace.toml"
       echo "Aerospace config installed at $CONFIG_DIR/aerospace.toml"
 
+      # Reload Aerospace config if running
+      if pgrep -x "AeroSpace" > /dev/null; then
+        sudo -u "$PRIMARY_USER" /opt/homebrew/bin/aerospace reload-config || true
+        echo "Aerospace config reloaded"
+      fi
+
       # Apply recommended system defaults for better tiling experience
       echo "Applying Aerospace-friendly system defaults..."
 
@@ -225,6 +230,13 @@ in {
 
       # Disable smooth scrolling (snappier feel)
       defaults write -g NSScrollAnimationEnabled -bool false
+
+      # Disable Spotlight/Finder search cmd+option+space shortcut (conflicts with Alacritty)
+      # Must run as user, not root
+      sudo -u "$PRIMARY_USER" defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/></dict>"
+      sudo -u "$PRIMARY_USER" defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 65 "<dict><key>enabled</key><false/></dict>"
+      # Apply changes immediately
+      /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
 
       echo "System defaults applied - log out/in for full effect"
     '';
