@@ -16,6 +16,9 @@ in {
     homeDirectory = lib.mkForce "/Users/${username}";
     stateVersion = "24.05";
 
+    # Suppress "Last login" message in terminal
+    file.".hushlogin".text = "";
+
     # User packages (in addition to system packages)
     packages = with pkgs; [
       # Development tools
@@ -62,7 +65,7 @@ in {
     profiles.default = {
       isDefault = true;
 
-      # Firefox settings
+      # Firefox settings - minimal UI
       settings = {
         # Enable userChrome.css
         "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
@@ -72,16 +75,19 @@ in {
         "privacy.trackingprotection.socialtracking.enabled" = true;
         "browser.send_pings" = false;
 
-        # UI tweaks
+        # Minimal UI
         "browser.uidensity" = 1;  # Compact mode
         "browser.tabs.firefox-view" = false;
-        "browser.toolbars.bookmarks.visibility" = "newtab";
+        "browser.toolbars.bookmarks.visibility" = "never";  # Never show bookmarks bar
 
-        # New tab page
+        # Clean new tab page
         "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
         "browser.newtabpage.activity-stream.feeds.topsites" = false;
         "browser.newtabpage.activity-stream.showSponsored" = false;
         "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
+        "browser.newtabpage.activity-stream.feeds.snippets" = false;
+        "browser.newtabpage.activity-stream.feeds.section.highlights" = false;
+        "browser.newtabpage.activity-stream.showSearch" = false;  # Hide search on new tab
 
         # Performance
         "gfx.webrender.all" = true;
@@ -91,20 +97,20 @@ in {
         "browser.aboutConfig.showWarning" = false;
         "browser.shell.checkDefaultBrowser" = false;
         "extensions.pocket.enabled" = false;
+        "browser.tabs.tabmanager.enabled" = false;  # Hide tab dropdown
+        "browser.download.autohideButton" = true;  # Auto-hide download button
       };
 
-      # userChrome.css for custom styling (Stylix colors + square corners)
+      # userChrome.css - Ultra minimal Firefox UI
       userChrome = ''
-        /* Firefox userChrome.css - Minimal UI with Stylix colors */
-        /* Square corners everywhere */
+        /* Minimal Firefox - Stylix themed, square corners */
 
         :root {
+          --uc-navbar-height: 40px;
           --lwt-accent-color: ${colors.base00} !important;
           --lwt-text-color: ${colors.base05} !important;
           --toolbar-bgcolor: ${colors.base00} !important;
           --toolbar-color: ${colors.base05} !important;
-          --tabs-border-color: ${colors.base03} !important;
-          --tab-selected-bgcolor: ${colors.base01} !important;
         }
 
         /* Remove ALL border radius */
@@ -112,100 +118,128 @@ in {
           border-radius: 0 !important;
         }
 
-        /* Main toolbar */
-        #navigator-toolbox {
-          background: var(--toolbar-bgcolor) !important;
-          border-bottom: 1px solid ${colors.base03} !important;
-        }
-
+        /* ===== HIDE NAVBAR BY DEFAULT ===== */
         #nav-bar {
-          background: var(--toolbar-bgcolor) !important;
-          border: none !important;
-          box-shadow: none !important;
+          min-height: 0 !important;
+          max-height: 0 !important;
+          height: 0 !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          overflow: hidden !important;
+          opacity: 0;
+          transition: all 0.15s ease !important;
         }
 
-        /* URL bar - square */
+        /* Show navbar on hover or when URL bar is focused */
+        #navigator-toolbox:hover #nav-bar,
+        #navigator-toolbox:focus-within #nav-bar {
+          min-height: var(--uc-navbar-height) !important;
+          max-height: var(--uc-navbar-height) !important;
+          height: var(--uc-navbar-height) !important;
+          opacity: 1;
+        }
+
+        /* ===== HIDE EXTRA ELEMENTS ===== */
+        #PersonalToolbar,           /* Bookmarks bar */
+        #titlebar-spacer,           /* Titlebar spacers */
+        .titlebar-buttonbox-container, /* Window buttons (we use WM) */
+        #alltabs-button,            /* All tabs dropdown */
+        #firefox-view-button,       /* Firefox view */
+        #tracking-protection-icon-container, /* Shield icon */
+        #identity-icon-box,         /* Site identity */
+        #page-action-buttons,       /* Page actions */
+        .tab-close-button,          /* Tab close buttons */
+        #star-button-box,           /* Bookmark star */
+        #urlbar-zoom-button,        /* Zoom indicator */
+        #reader-mode-button,        /* Reader mode */
+        #picture-in-picture-button, /* PiP button */
+        .tab-secondary-label        /* Tab subtitle */
+        {
+          display: none !important;
+        }
+
+        /* ===== TABS BAR ===== */
+        #TabsToolbar {
+          background: ${colors.base00} !important;
+          border: none !important;
+        }
+
+        #tabbrowser-tabs {
+          background: ${colors.base00} !important;
+        }
+
+        .tabbrowser-tab {
+          margin: 0 !important;
+          padding: 0 4px !important;
+          min-height: 32px !important;
+        }
+
+        .tab-background {
+          margin: 0 !important;
+          background: transparent !important;
+          border: none !important;
+        }
+
+        .tabbrowser-tab[selected="true"] .tab-background {
+          background: ${colors.base01} !important;
+        }
+
+        .tab-line { display: none !important; }
+
+        /* ===== NAVIGATOR TOOLBOX ===== */
+        #navigator-toolbox {
+          background: ${colors.base00} !important;
+          border-bottom: none !important;
+        }
+
+        /* ===== URL BAR (when visible) ===== */
+        #nav-bar {
+          background: ${colors.base00} !important;
+          border: none !important;
+        }
+
         #urlbar-background {
           background: ${colors.base01} !important;
-          border: 1px solid ${colors.base03} !important;
-          border-radius: 0 !important;
+          border: 1px solid ${colors.base02} !important;
         }
 
         #urlbar[focused="true"] > #urlbar-background {
           border-color: ${colors.base0D} !important;
         }
 
-        /* Tabs toolbar */
-        #TabsToolbar {
-          background: ${colors.base01} !important;
-        }
-
-        /* Tab styling - completely square */
-        .tabbrowser-tab {
-          border-radius: 0 !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-
-        .tab-background {
-          border-radius: 0 !important;
-          margin: 0 !important;
-          background: ${colors.base01} !important;
-          border: none !important;
-        }
-
-        .tabbrowser-tab[selected="true"] .tab-background {
-          background: ${colors.base00} !important;
-          border-bottom: 2px solid ${colors.base0D} !important;
-        }
-
-        .tab-line {
-          display: none !important;
-        }
-
-        /* Tab close button */
-        .tab-close-button {
-          border-radius: 0 !important;
-        }
-
-        /* Sidebar */
+        /* ===== MISC ===== */
         #sidebar-box {
           background: ${colors.base00} !important;
-          border-right: 1px solid ${colors.base03} !important;
         }
 
-        /* Findbar */
         findbar {
           background: ${colors.base00} !important;
-          border-top: 1px solid ${colors.base03} !important;
         }
 
-        /* Autocomplete popup */
-        #PopupAutoComplete,
-        .autocomplete-richlistbox {
+        /* Autocomplete dropdown */
+        .urlbarView {
           background: ${colors.base00} !important;
-          border-radius: 0 !important;
         }
 
-        /* Buttons */
-        toolbarbutton {
-          border-radius: 0 !important;
-        }
-
-        /* Remove tab separator lines */
-        .tabbrowser-tab::after,
-        .tabbrowser-tab::before {
-          display: none !important;
+        .urlbarView-row[selected] {
+          background: ${colors.base01} !important;
         }
       '';
 
-      # userContent.css for web content
+      # userContent.css - minimal new tab, dark scrollbars
       userContent = ''
-        /* Firefox userContent.css - Dark scrollbars */
+        /* Dark scrollbars */
         @-moz-document url-prefix("about:"), url-prefix("chrome:") {
-          * {
-            scrollbar-color: ${colors.base03} ${colors.base00};
-          }
+          * { scrollbar-color: ${colors.base02} ${colors.base00}; }
+        }
+
+        /* Minimal new tab page */
+        @-moz-document url("about:newtab"), url("about:home") {
+          body { background: ${colors.base00} !important; }
+          .search-wrapper,
+          .search-handoff-button,
+          .logo-and-wordmark,
+          .wordmark { display: none !important; }
         }
       '';
     };

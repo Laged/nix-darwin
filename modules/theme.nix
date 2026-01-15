@@ -1,8 +1,12 @@
 # Stylix theme configuration (Darwin level)
 # Chalk theme - soft pastel dark theme
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
-{
+let
+  wallpaper = pkgs.runCommand "chalk-wallpaper.png" { buildInputs = [ pkgs.imagemagick ]; } ''
+    magick -size 3840x2160 xc:#151515 $out
+  '';
+in {
   stylix = {
     enable = true;
 
@@ -26,17 +30,15 @@
       base0F = "deaf8f"; # Brown (tan)
     };
 
-    # Required image - generate a solid color
-    image = pkgs.runCommand "chalk-wallpaper.png" { buildInputs = [ pkgs.imagemagick ]; } ''
-      magick -size 1920x1080 xc:#151515 $out
-    '';
+    # Wallpaper image
+    image = wallpaper;
 
     polarity = "dark";
 
     fonts = {
       monospace = {
-        package = pkgs.jetbrains-mono;
-        name = "JetBrains Mono";
+        package = pkgs.nerd-fonts.jetbrains-mono;
+        name = "JetBrainsMono Nerd Font";
       };
       sansSerif = {
         package = pkgs.inter;
@@ -56,4 +58,10 @@
       };
     };
   };
+
+  # Set macOS desktop wallpaper
+  system.activationScripts.postActivation.text = ''
+    echo "Setting desktop wallpaper..."
+    osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"${wallpaper}\" as POSIX file"
+  '';
 }
