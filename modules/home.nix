@@ -110,6 +110,10 @@ in {
         "browser.sessionstore.resume_from_crash" = false;
         "browser.sessionstore.max_resumed_crashes" = 0;
         "toolkit.startup.max_resumed_crashes" = -1;
+        "browser.safebrowsing.enabled" = false;
+        "browser.slowStartup.notificationDisabled" = true;
+        "browser.slowStartup.maxSamples" = 0;
+        "browser.startup.homepage_override.mstone" = "ignore";
 
         # Allow sideloaded extensions (from profile folder)
         "extensions.autoDisableScopes" = 0;
@@ -117,34 +121,39 @@ in {
         "extensions.installDistroAddons" = true;
       };
 
-      # userChrome.css - Chromeless Firefox (no tabs, no navbar, no UI)
+      # userChrome.css - Chromeless Firefox (shows navbar on Cmd+L focus)
       userChrome = ''
-        #navigator-toolbox {
-          visibility: collapse !important;
-          height: 0 !important;
-          min-height: 0 !important;
-          max-height: 0 !important;
-          overflow: hidden !important;
-        }
-
+        /* Hide tabs and bookmarks always */
         #TabsToolbar,
-        #nav-bar,
         #PersonalToolbar,
-        #toolbar-menubar,
-        .browser-toolbar {
+        #toolbar-menubar {
           visibility: collapse !important;
-          height: 0 !important;
-          min-height: 0 !important;
         }
 
+        /* Hide titlebar elements */
         #titlebar,
         .titlebar-buttonbox-container,
         .titlebar-spacer {
           display: none !important;
         }
 
-        #browser {
-          margin-top: 0 !important;
+        /* Navbar: transparent and zero-height by default */
+        #nav-bar {
+          opacity: 0 !important;
+          max-height: 0 !important;
+          overflow: hidden !important;
+          transition: opacity 0.1s, max-height 0.1s !important;
+        }
+
+        /* Show navbar when URL bar is focused (Cmd+L) */
+        #nav-bar:focus-within {
+          opacity: 1 !important;
+          max-height: 40px !important;
+        }
+
+        /* Toolbox container */
+        #navigator-toolbox {
+          min-height: 0 !important;
         }
       '';
 
@@ -182,6 +191,11 @@ in {
         fi
       done
     fi
+
+    # Clear Firefox crash state to prevent troubleshoot mode dialog
+    rm -f "$DEFAULT_PROFILE/.parentlock" 2>/dev/null || true
+    rm -rf "$DEFAULT_PROFILE/crashes" 2>/dev/null || true
+    rm -f "$DEFAULT_PROFILE/sessionCheckpoints.json" 2>/dev/null || true
 
     # Install Firefox policies for Homebrew Firefox (for extensions)
     FIREFOX_APP="/Applications/Firefox.app"
