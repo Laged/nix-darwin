@@ -62,6 +62,16 @@ in {
     enable = true;
     package = null; # Use Homebrew-installed Firefox
 
+    # Install extensions via policies (works with Homebrew Firefox)
+    policies = {
+      ExtensionSettings = {
+        "{d7742d87-e61d-4b78-b8a1-b469842139fa}" = {
+          installation_mode = "force_installed";
+          install_url = "https://addons.mozilla.org/firefox/downloads/latest/vimium-ff/latest.xpi";
+        };
+      };
+    };
+
     profiles.default = {
       isDefault = true;
 
@@ -100,11 +110,15 @@ in {
         "browser.sessionstore.resume_from_crash" = false;
         "browser.sessionstore.max_resumed_crashes" = 0;
         "toolkit.startup.max_resumed_crashes" = -1;
+
+        # Allow sideloaded extensions (from profile folder)
+        "extensions.autoDisableScopes" = 0;
+        "extensions.enabledScopes" = 15;
+        "extensions.installDistroAddons" = true;
       };
 
       # userChrome.css - Chromeless Firefox (no tabs, no navbar, no UI)
       userChrome = ''
-        /* Hide entire toolbar area */
         #navigator-toolbox {
           visibility: collapse !important;
           height: 0 !important;
@@ -113,7 +127,6 @@ in {
           overflow: hidden !important;
         }
 
-        /* Fallback: hide individual toolbars */
         #TabsToolbar,
         #nav-bar,
         #PersonalToolbar,
@@ -124,14 +137,12 @@ in {
           min-height: 0 !important;
         }
 
-        /* Hide titlebar elements */
         #titlebar,
         .titlebar-buttonbox-container,
         .titlebar-spacer {
           display: none !important;
         }
 
-        /* Remove any top margin/padding from content */
         #browser {
           margin-top: 0 !important;
         }
@@ -156,16 +167,15 @@ in {
     };
   };
 
-  # Copy Firefox chrome files (dereference symlinks - Firefox may not follow them)
+  # Copy Firefox files (dereference symlinks - Firefox may not follow them)
   home.activation.firefoxChrome = lib.hm.dag.entryAfter ["writeBoundary"] ''
     FIREFOX_DIR="$HOME/Library/Application Support/Firefox/Profiles"
-    DEFAULT_CHROME="$FIREFOX_DIR/default/chrome"
+    DEFAULT_PROFILE="$FIREFOX_DIR/default"
 
-    # Dereference symlinks in the default profile's chrome folder
-    if [ -d "$DEFAULT_CHROME" ]; then
-      for f in "$DEFAULT_CHROME"/*; do
+    # Dereference symlinks in the chrome folder
+    if [ -d "$DEFAULT_PROFILE/chrome" ]; then
+      for f in "$DEFAULT_PROFILE/chrome"/*; do
         if [ -L "$f" ]; then
-          # Replace symlink with actual file content
           REAL_FILE=$(readlink "$f")
           rm "$f"
           cp "$REAL_FILE" "$f"
@@ -173,13 +183,24 @@ in {
       done
     fi
 
-    # Copy to all other profiles
-    for profile in "$FIREFOX_DIR"/*; do
-      if [ -d "$profile" ] && [ "$profile" != "$FIREFOX_DIR/default" ]; then
-        mkdir -p "$profile/chrome"
-        cp -f "$DEFAULT_CHROME"/* "$profile/chrome/" 2>/dev/null || true
-      fi
-    done
+    # Install Firefox policies for Homebrew Firefox (for extensions)
+    FIREFOX_APP="/Applications/Firefox.app"
+    if [ -d "$FIREFOX_APP" ]; then
+      DIST_DIR="$FIREFOX_APP/Contents/Resources/distribution"
+      mkdir -p "$DIST_DIR"
+      cat > "$DIST_DIR/policies.json" << 'POLICIES'
+{
+  "policies": {
+    "ExtensionSettings": {
+      "{d7742d87-e61d-4b78-b8a1-b469842139fa}": {
+        "installation_mode": "force_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/vimium-ff/latest.xpi"
+      }
+    }
+  }
+}
+POLICIES
+    fi
   '';
 
   # ============================================

@@ -16,10 +16,13 @@
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
     rust-overlay.url = "github:oxalica/rust-overlay";
     llm-agents.url = "github:numtide/llm-agents.nix";
+
+    # Firefox extensions
+    nur.url = "github:nix-community/NUR";
   };
 
   outputs =
-    inputs@{ self, nix-darwin, nixpkgs, home-manager, stylix, determinate, rust-overlay, llm-agents }:
+    inputs@{ self, nix-darwin, nixpkgs, home-manager, stylix, determinate, rust-overlay, llm-agents, nur }:
     let
       username = "laged";
       system = "aarch64-darwin";
@@ -28,7 +31,10 @@
         # List packages installed in system profile. To search by name, run:
         # $ nix-env -qaP | grep wget
         nixpkgs.config.allowUnfree = true;
-        nixpkgs.overlays = [ rust-overlay.overlays.default ];
+        nixpkgs.overlays = [
+          rust-overlay.overlays.default
+          nur.overlays.default
+        ];
         environment.systemPackages = let
           rust-toolchain = pkgs.rust-bin.stable.latest.default.override {
             extensions = [ "rust-src" "rust-analyzer" ];
