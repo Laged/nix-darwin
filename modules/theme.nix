@@ -131,9 +131,15 @@ in {
   # Generate and set macOS desktop wallpaper dynamically based on resolution
   system.activationScripts.postActivation.text = ''
     echo "Generating wallpaper for current display resolution..."
-    WALLPAPER_PATH="/tmp/stylix-wallpaper.png"
+    # Use persistent location so wallpaper survives reboots
+    PRIMARY_USER="${config.system.primaryUser}"
+    USER_HOME="/Users/$PRIMARY_USER"
+    WALLPAPER_DIR="$USER_HOME/.local/share/stylix"
+    WALLPAPER_PATH="$WALLPAPER_DIR/wallpaper.png"
+    sudo -u "$PRIMARY_USER" mkdir -p "$WALLPAPER_DIR"
     ${wallpaperGenerator} "$WALLPAPER_PATH"
+    chown "$PRIMARY_USER" "$WALLPAPER_PATH"
     echo "Setting desktop wallpaper..."
-    osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$WALLPAPER_PATH\" as POSIX file"
+    sudo -u "$PRIMARY_USER" osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$WALLPAPER_PATH\" as POSIX file"
   '';
 }
