@@ -80,10 +80,13 @@ let
 
     # --- Layout Management ---
     cmd-alt-f = 'fullscreen'
-    cmd-alt-shift-f = 'macos-native-fullscreen'
+    cmd-alt-g = 'macos-native-fullscreen'
     cmd-alt-t = 'layout floating tiling'
     cmd-alt-e = 'layout tiles horizontal vertical'
     cmd-alt-w = 'layout accordion horizontal vertical'
+
+    # --- Multi-monitor ---
+    cmd-alt-y = 'move-node-to-monitor --wrap-around next'
 
     # --- Balance window sizes (make all windows equal) ---
     cmd-alt-equal = 'balance-sizes'
@@ -231,9 +234,9 @@ in {
       # Disable smooth scrolling (snappier feel)
       defaults write -g NSScrollAnimationEnabled -bool false
 
-      # Disable Spotlight/Finder search cmd+option+space shortcut (conflicts with Alacritty)
-      # Must run as user, not root
-      sudo -u "$PRIMARY_USER" defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/></dict>"
+      # Keep Spotlight (Cmd+Space) enabled, disable Finder search (Cmd+Alt+Space) which conflicts with Alacritty
+      # 64 = Spotlight, 65 = Finder search window
+      sudo -u "$PRIMARY_USER" defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><true/></dict>"
       sudo -u "$PRIMARY_USER" defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 65 "<dict><key>enabled</key><false/></dict>"
       # Apply changes immediately
       /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
